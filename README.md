@@ -433,7 +433,7 @@ of this software and associated documentation files.
 
 <div align="center">
 
-### Made with ❤️ by GuaDNS Team
+### Made with ❤️ by 瓜哥&递归追索工作室
 
 [⭐ Star](https://github.com/) · [🐛 Report Bug](https://github.com/) · [💡 Request Feature](https://github.com/)
 
