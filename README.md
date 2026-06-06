@@ -73,9 +73,9 @@
 
 ## 📸 Screenshots / 界面预览![](C:\Users\HW\AppData\Roaming\marktext\images\2026-06-06-11-28-35-image.png)
 
-![](C:\Users\HW\AppData\Roaming\marktext\images\2026-06-06-11-30-05-image.png)
+![](https://cdn.phototourl.com/free/2026-06-06-eb007c9a-8b60-4bda-8f51-8a45c032b45d.png)
 
-![](C:\Users\HW\AppData\Roaming\marktext\images\2026-06-06-11-30-26-image.png)
+![](https://cdn.phototourl.com/free/2026-06-06-ea8dfbb0-0e94-473d-8da8-a39fc6aa0bc3.png)
 
 ---
 
