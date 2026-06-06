@@ -35,12 +35,14 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { useCloudflareStore } from '@/stores/cloudflare'
 import { ElMessage } from 'element-plus'
 import { Lock } from '@element-plus/icons-vue'
 import type { FormInstance, FormRules } from 'element-plus'
 
 const router = useRouter()
 const authStore = useAuthStore()
+const cloudflareStore = useCloudflareStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 
@@ -54,12 +56,24 @@ const rules = reactive<FormRules>({
   ]
 })
 
+const preloadData = () => {
+  try {
+    cloudflareStore.loadAccounts()
+    if (cloudflareStore.accounts.length > 0) {
+      cloudflareStore.fetchAllDomains(false).catch(() => {})
+    }
+  } catch {}
+}
+
 onMounted(async () => {
   await authStore.loadState()
   
   if (!authStore.hasPassword) {
     router.push('/setup')
+    return
   }
+
+  preloadData()
 })
 
 const handleUnlock = async () => {

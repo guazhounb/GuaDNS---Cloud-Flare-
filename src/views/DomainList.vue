@@ -11,12 +11,15 @@
     <div v-else class="content">
       <div class="page-header glass-effect">
         <h1>域名管理</h1>
-        <el-button type="primary" :icon="Refresh" @click="refreshDomains" :loading="loading">
-          刷新列表
-        </el-button>
+        <div class="page-header-right">
+          <span class="total-stats">共 {{ totalDomains }} 个域名 · {{ totalRecords }} 条记录</span>
+          <el-button type="primary" :icon="Refresh" @click="refreshDomains" :loading="loading">
+            刷新列表
+          </el-button>
+        </div>
       </div>
       
-      <div v-if="loading && accountDomains.length === 0" class="loading-state glass-effect">
+      <div v-if="accountDomains.length === 0" class="loading-state glass-effect">
         <el-icon :size="40" class="is-loading"><Loading /></el-icon>
         <p>加载中...</p>
       </div>
@@ -31,7 +34,7 @@
               {{ ad.error }}
             </span>
             <span v-else class="count-badge">
-              {{ ad.domains.length }} 个域名
+              {{ ad.domains.length }} 个域名 · {{ getAccountRecordCount(ad) }} 条记录
             </span>
           </div>
           <div class="domain-grid">
@@ -44,17 +47,13 @@
               class="domain-card glass-effect"
               @click="router.push(`/main/domain/${domain.id}`)"
             >
-              <div class="domain-header">
-                <div class="domain-icon">
-                  <el-icon :size="32"><Globe /></el-icon>
-                </div>
-                <div class="domain-status" :class="domain.status">
-                  {{ getStatusText(domain.status) }}
-                </div>
+              <div class="domain-main">
+                <div class="domain-status-dot" :class="domain.status" />
+                <span class="domain-name">{{ domain.name }}</span>
+                <el-icon class="domain-arrow"><ArrowRight /></el-icon>
               </div>
-              <div class="domain-name">{{ domain.name }}</div>
-              <div class="domain-info">
-                <span><el-icon><Document /></el-icon> {{ getNSRecordsCount(domain.id) }} 个 NS 记录</span>
+              <div class="domain-sub">
+                {{ getDomainRecordCount(ad, domain.id) }} 条记录
               </div>
             </div>
           </div>
@@ -71,36 +70,17 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useCloudflareStore } from '@/stores/cloudflare'
 import { ElMessage, ElButton } from 'element-plus'
-import { Refresh } from '@element-plus/icons-vue'
+import { Refresh, ArrowRight } from '@element-plus/icons-vue'
 import { storeToRefs } from 'pinia'
 
 const router = useRouter()
 const cloudflareStore = useCloudflareStore()
 const { loadAccounts, fetchAllDomains } = cloudflareStore
 const { accounts, accountDomains, loading } = storeToRefs(cloudflareStore)
-
-const getNSRecordsCount = (domainId: string) => {
-  for (const ad of accountDomains.value) {
-    if (ad.domainNSRecordsCount && ad.domainNSRecordsCount[domainId] !== undefined) {
-      return ad.domainNSRecordsCount[domainId]
-    }
-  }
-  return 0
-}
-
-const getStatusText = (status: string) => {
-  const statusMap: Record<string, string> = {
-    active: '活跃',
-    pending: '待激活',
-    moved: '已转移',
-    deleted: '已删除'
-  }
-  return statusMap[status] || status
-}
 
 const loadAllDomains = async (force = false) => {
   try {
@@ -114,6 +94,24 @@ const refreshDomains = async () => {
   await loadAllDomains(true)
   ElMessage.success('域名列表已刷新')
 }
+
+const getAccountRecordCount = (ad: { domainRecordsCount?: Record<string, number> }) => {
+  if (!ad.domainRecordsCount) return 0
+  return Object.values(ad.domainRecordsCount).reduce((sum, count) => sum + count, 0)
+}
+
+const getDomainRecordCount = (ad: { domainRecordsCount?: Record<string, number> }, domainId: string) => {
+  if (!ad.domainRecordsCount) return 0
+  return ad.domainRecordsCount[domainId] ?? 0
+}
+
+const totalDomains = computed(() => {
+  return accountDomains.value.reduce((sum, ad) => sum + ad.domains.length, 0)
+})
+
+const totalRecords = computed(() => {
+  return accountDomains.value.reduce((sum, ad) => sum + getAccountRecordCount(ad), 0)
+})
 
 watch(() => accounts.value, (newAccounts) => {
   if (newAccounts.length > 0) {
@@ -170,6 +168,18 @@ onMounted(async () => {
   font-size: 24px;
   font-weight: 700;
   letter-spacing: -0.5px;
+}
+
+.page-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.total-stats {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 500;
 }
 
 .content {
@@ -265,72 +275,83 @@ onMounted(async () => {
 }
 
 .domain-card {
-  padding: 28px;
+  padding: 22px 24px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border-radius: 16px;
 }
 
 .domain-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.35);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-.domain-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 18px;
-}
-
-.domain-icon {
-  width: 60px;
-  height: 60px;
-  background: linear-gradient(135deg, rgba(0, 122, 255, 0.25), rgba(0, 86, 204, 0.15));
-  border-radius: 16px;
+.domain-main {
   display: flex;
   align-items: center;
-  justify-content: center;
-  color: #007AFF;
+  gap: 12px;
 }
 
-.domain-status {
-  padding: 7px 14px;
-  border-radius: 100px;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.2px;
+.domain-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }
 
-.domain-status.active {
-  background: rgba(52, 199, 89, 0.2);
-  color: #34C759;
+.domain-status-dot.active {
+  background: #34C759;
+  box-shadow: 0 0 8px #34C759;
+  animation: blink 1.2s ease-in-out infinite;
 }
 
-.domain-status.pending {
-  background: rgba(255, 149, 0, 0.2);
-  color: #FF9500;
+.domain-status-dot.pending {
+  background: #FF9500;
+  box-shadow: 0 0 6px #FF9500;
+  animation: blink 1.5s ease-in-out infinite;
 }
 
-.domain-status.moved,
-.domain-status.deleted {
-  background: rgba(255, 59, 48, 0.2);
-  color: #FF3B30;
+.domain-status-dot.moved,
+.domain-status-dot.deleted {
+  background: #FF3B30;
+  box-shadow: 0 0 6px #FF3B30;
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.85); }
 }
 
 .domain-name {
+  flex: 1;
   color: var(--text-primary);
-  font-size: 21px;
+  font-size: 18px;
   font-weight: 600;
-  margin-bottom: 10px;
   letter-spacing: -0.3px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.domain-info {
-  color: var(--text-secondary);
-  font-size: 14px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+.domain-arrow {
+  color: var(--text-muted);
+  flex-shrink: 0;
+  opacity: 0.6;
+  transition: all 0.3s ease;
+}
+
+.domain-card:hover .domain-arrow {
+  color: var(--text-primary);
+  opacity: 1;
+  transform: translateX(3px);
+}
+
+.domain-sub {
+  margin-top: 10px;
+  padding-left: 22px;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 500;
 }
 </style>

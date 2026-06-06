@@ -95,11 +95,30 @@ class CloudflareAPI {
   }
 
   async getDNSRecords(zoneId: string): Promise<DNSRecord[]> {
-    const result = await this.request<DNSRecord[]>('GET', `/zones/${zoneId}/dns_records?per_page=100`)
-    if (!result.success) {
-      throw new Error(result.errors?.[0]?.message || 'Failed to fetch DNS records')
+    let allRecords: DNSRecord[] = []
+    let page = 1
+    const perPage = 100
+    
+    while (true) {
+      const result = await this.request<DNSRecord[]>('GET', `/zones/${zoneId}/dns_records?per_page=${perPage}&page=${page}`)
+      if (!result.success) {
+        throw new Error(result.errors?.[0]?.message || 'Failed to fetch DNS records')
+      }
+      
+      if (result.result.length === 0) {
+        break
+      }
+      
+      allRecords = [...allRecords, ...result.result]
+      
+      if (result.result.length < perPage) {
+        break
+      }
+      
+      page++
     }
-    return result.result
+    
+    return allRecords
   }
 
   async createDNSRecord(zoneId: string, record: Partial<DNSRecord>): Promise<DNSRecord> {

@@ -2,9 +2,7 @@
   <div class="main-container">
     <div class="sidebar glass-effect">
       <div class="logo-section">
-        <el-icon :size="40" color="#007AFF">
-          <Platform />
-        </el-icon>
+        <img src="@/assets/guadns-logo.png" alt="GuaDNS" class="app-logo" />
         <span class="app-name">GuaDNS</span>
       </div>
       
@@ -101,6 +99,13 @@ const handleLock = () => {
   gap: 12px;
   margin-bottom: 32px;
   padding: 0 8px;
+}
+
+.app-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .app-name {
